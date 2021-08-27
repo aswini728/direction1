@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="38c45a0d-931d-4acd-b6ab-24e4413412c1" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="d882106a-a7b7-4e81-b6b8-01d1070d0569" />
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="2413755c-06bb-4cdc-a56c-4817f3eaa2a2" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="Aswini08@" database="aswini" />
+	</db:config>
+	<flow name="empdirection1Flow" doc:id="d0e99e4c-ac5d-4b1a-aae3-a53716991932" >
+		<http:listener doc:name="Listener" doc:id="7d955f04-db2b-4b82-b07d-aeee0a885713" config-ref="HTTP_Listener_config" path="/emp"/>
+		<file:read doc:name="Reading the csv file" doc:id="715d3bc3-b08d-4c16-a822-aea2edacb370" outputMimeType="application/csv" config-ref="File_Config" path="C:\Users\vallu\Desktop\ZipLookup_POC3 (1).csv"/>
+		<ee:transform doc:name="Transform Message with payload" doc:id="8ea9c712-f3c6-433e-b5da-91586f14dee4">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="filter midwest or northeast" doc:id="1f03fd72-5f87-4c58-bdcb-a03e83d3bd15" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload filter ($.Region == "Midwest" or $.Region == "Northeast")]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:bulk-insert doc:name="Bulk insert according to filter" doc:id="7fe0edc9-08c3-43aa-bf51-01027061f56a" config-ref="Database_Config">
+							<db:sql><![CDATA[insert into Direction_1 values(:City,:State,:Zip,:Region)]]></db:sql>
+						</db:bulk-insert>
+	</flow>
+</mule>
